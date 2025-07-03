@@ -1,0 +1,25 @@
+FROM ghcr.io/linuxserver/webtop:ubuntu-kde
+
+# Variables
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar Java, utilidades, locales en español
+RUN apt-get update && apt-get install -y \
+    openjdk-17-jdk wget unzip locales language-pack-es \
+ && locale-gen es_ES.UTF-8 \
+ && update-locale LANG=es_ES.UTF-8
+
+ENV LANG=es_ES.UTF-8
+ENV LANGUAGE=es_ES:es
+ENV LC_ALL=es_ES.UTF-8
+
+# Instalar JetBrains Toolbox
+RUN wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-2.3.1.31116.tar.gz -O /tmp/toolbox.tar.gz \
+ && mkdir /opt/toolbox && tar -xvzf /tmp/toolbox.tar.gz -C /opt/toolbox --strip-components=1 \
+ && /opt/toolbox/jetbrains-toolbox --appimage-extract \
+ && mv /opt/toolbox/squashfs-root /opt/jetbrains-toolbox \
+ && ln -s /opt/jetbrains-toolbox/AppRun /usr/local/bin/jetbrains-toolbox \
+ && rm -rf /tmp/toolbox.tar.gz
+
+# Ejecutar Toolbox en primer inicio (opcional, si quieres que se abra sola)
+CMD ["bash", "-c", "jetbrains-toolbox & /init"]
