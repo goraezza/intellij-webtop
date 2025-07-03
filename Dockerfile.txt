@@ -1,25 +1,40 @@
-FROM ghcr.io/linuxserver/webtop:ubuntu-kde
+FROM ubuntu:22.04
 
-# Variables
+# Variables de entorno básicas
 ENV DEBIAN_FRONTEND=noninteractive
-
-# Instalar Java, utilidades, locales en español
-RUN apt-get update && apt-get install -y \
-    openjdk-17-jdk wget unzip locales language-pack-es \
- && locale-gen es_ES.UTF-8 \
- && update-locale LANG=es_ES.UTF-8
-
 ENV LANG=es_ES.UTF-8
 ENV LANGUAGE=es_ES:es
 ENV LC_ALL=es_ES.UTF-8
 
-# Instalar JetBrains Toolbox
-RUN wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-2.3.1.31116.tar.gz -O /tmp/toolbox.tar.gz \
- && mkdir /opt/toolbox && tar -xvzf /tmp/toolbox.tar.gz -C /opt/toolbox --strip-components=1 \
- && /opt/toolbox/jetbrains-toolbox --appimage-extract \
- && mv /opt/toolbox/squashfs-root /opt/jetbrains-toolbox \
- && ln -s /opt/jetbrains-toolbox/AppRun /usr/local/bin/jetbrains-toolbox \
- && rm -rf /tmp/toolbox.tar.gz
+# Instalar dependencias básicas
+RUN apt update && apt install -y \
+    curl \
+    wget \
+    tar \
+    unzip \
+    libfuse2 \
+    locales \
+    ca-certificates \
+    libxi6 libxrender1 libxtst6 libfreetype6 libfontconfig1 \
+    openjdk-17-jdk \
+    && rm -rf /var/lib/apt/lists/*
 
-# Ejecutar Toolbox en primer inicio (opcional, si quieres que se abra sola)
-CMD ["bash", "-c", "jetbrains-toolbox & /init"]
+# Configurar locales en español
+RUN locale-gen es_ES.UTF-8
+
+# Crear usuario sin privilegios
+RUN useradd -ms /bin/bash developer
+USER developer
+WORKDIR /home/developer
+
+# Instalar JetBrains Toolbox y extraer IntelliJ IDEA Community
+RUN wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-2.3.1.13116.tar.gz -O /tmp/toolbox.tar.gz && \
+    mkdir -p /home/developer/toolbox && \
+    tar -xzf /tmp/toolbox.tar.gz -C /home/developer/toolbox --strip-components=1 && \
+    rm /tmp/toolbox.tar.gz
+
+# Hacer ejecutable el Toolbox
+RUN chmod +x /home/developer/toolbox/jetbrains-toolbox
+
+# Entrypoint (puedes personalizarlo según el entorno gráfico que uses)
+CMD ["/home/developer/toolbox/jetbrains-toolbox"]
