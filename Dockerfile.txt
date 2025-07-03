@@ -1,40 +1,14 @@
-FROM ubuntu:22.04
+# Imagen base con entorno XFCE accesible por navegador
+FROM ghcr.io/linuxserver/webtop:ubuntu-xfce
 
-# Variables de entorno básicas
-ENV DEBIAN_FRONTEND=noninteractive
-ENV LANG=es_ES.UTF-8
-ENV LANGUAGE=es_ES:es
-ENV LC_ALL=es_ES.UTF-8
+# Versión de IntelliJ IDEA Community que quieres instalar
+ENV IDEA_VERSION=2024.1.4
 
-# Instalar dependencias básicas
-RUN apt update && apt install -y \
-    curl \
-    wget \
-    tar \
-    unzip \
-    libfuse2 \
-    locales \
-    ca-certificates \
-    libxi6 libxrender1 libxtst6 libfreetype6 libfontconfig1 \
-    openjdk-17-jdk \
-    && rm -rf /var/lib/apt/lists/*
-
-# Configurar locales en español
-RUN locale-gen es_ES.UTF-8
-
-# Crear usuario sin privilegios
-RUN useradd -ms /bin/bash developer
-USER developer
-WORKDIR /home/developer
-
-# Instalar JetBrains Toolbox y extraer IntelliJ IDEA Community
-RUN wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-2.3.1.13116.tar.gz -O /tmp/toolbox.tar.gz && \
-    mkdir -p /home/developer/toolbox && \
-    tar -xzf /tmp/toolbox.tar.gz -C /home/developer/toolbox --strip-components=1 && \
-    rm /tmp/toolbox.tar.gz
-
-# Hacer ejecutable el Toolbox
-RUN chmod +x /home/developer/toolbox/jetbrains-toolbox
-
-# Entrypoint (puedes personalizarlo según el entorno gráfico que uses)
-CMD ["/home/developer/toolbox/jetbrains-toolbox"]
+# Instalar dependencias y descargar IntelliJ Community
+RUN apt-get update && \
+    apt-get install -y wget tar && \
+    wget -O /tmp/intellij.tar.gz https://download.jetbrains.com/idea/ideaIC-${IDEA_VERSION}.tar.gz && \
+    mkdir -p /opt/intellij && \
+    tar -xzf /tmp/intellij.tar.gz -C /opt/intellij --strip-components=1 && \
+    rm /tmp/intellij.tar.gz && \
+    ln -s /opt/intellij/bin/idea.sh /usr/local/bin/intellij
