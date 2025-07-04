@@ -1,34 +1,21 @@
-# Imagen base con soporte gráfico (webtop) y Ubuntu
-FROM ghcr.io/linuxserver/webtop:ubuntu-xfce
+FROM ghcr.io/linuxserver/webtop:ubuntu-mate
 
-# Instala dependencias necesarias para AppImage
-USER root
-RUN apt update && apt install -y \
-    libfuse2 \
-    wget \
-    tar \
-    xz-utils \
-    libxss1 \
-    libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    libasound2 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcb-dri3-0 \
-    --no-install-recommends && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+# Variables
+ENV TOOLBOX_VERSION=2.3.1.11116
 
-# Crea carpeta para toolbox
-RUN mkdir -p /opt/toolbox
+# Instalar dependencias necesarias para ejecutar AppImage
+RUN apt-get update && \
+    apt-get install -y fuse && \
+    apt-get clean
 
-# Descarga JetBrains Toolbox como AppImage
-RUN wget -O /opt/toolbox/jetbrains-toolbox.AppImage https://download.jetbrains.com/toolbox/jetbrains-toolbox-2.3.1.11116.AppImage && \
-    chmod +x /opt/toolbox/jetbrains-toolbox.AppImage && \
-    /opt/toolbox/jetbrains-toolbox.AppImage --appimage-extract && \
-    mv squashfs-root /opt/jetbrains-toolbox && \
-    ln -s /opt/jetbrains-toolbox/AppRun /usr/local/bin/jetbrains-toolbox
+# Crear directorio y descargar JetBrains Toolbox AppImage
+RUN mkdir -p /opt/toolbox && \
+    wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-${TOOLBOX_VERSION}.tar.gz -O /tmp/toolbox.tar.gz && \
+    tar -xzf /tmp/toolbox.tar.gz -C /opt/toolbox --strip-components=1 && \
+    chmod +x /opt/toolbox/jetbrains-toolbox && \
+    rm /tmp/toolbox.tar.gz
 
-# Cambia al usuario por defecto de Webtop
-USER abc
+# Crear acceso directo
+RUN ln -s /opt/toolbox/jetbrains-toolbox /usr/local/bin/jetbrains-toolbox
 
-# Ejecutar Webtop normalmente. IntelliJ se abrirá desde el menú de escritorio dentro del contenedor
+# Puedes arrancarlo manualmente luego desde terminal o como comando inicial
