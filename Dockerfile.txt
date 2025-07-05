@@ -1,21 +1,34 @@
-FROM ghcr.io/linuxserver/webtop:ubuntu-mate
+FROM debian:bullseye-slim
 
-# Variables
-ENV TOOLBOX_VERSION=2.3.1.11116
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar dependencias necesarias para ejecutar AppImage
-RUN apt-get update && \
-    apt-get install -y fuse && \
-    apt-get clean
+# Instalamos dependencias y jq
+RUN apt-get update && apt-get install -y \
+    wget \
+    jq \
+    ca-certificates \
+    libxext6 \
+    libxrender1 \
+    libxtst6 \
+    libfreetype6 \
+    libxi6 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    xz-utils \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Crear directorio y descargar JetBrains Toolbox AppImage
-RUN mkdir -p /opt/toolbox && \
-    wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-${TOOLBOX_VERSION}.tar.gz -O /tmp/toolbox.tar.gz && \
-    tar -xzf /tmp/toolbox.tar.gz -C /opt/toolbox --strip-components=1 && \
-    chmod +x /opt/toolbox/jetbrains-toolbox && \
-    rm /tmp/toolbox.tar.gz
+# Creamos el usuario
+RUN useradd -ms /bin/bash developer
+USER developer
+WORKDIR /home/developer
 
-# Crear acceso directo
-RUN ln -s /opt/toolbox/jetbrains-toolbox /usr/local/bin/jetbrains-toolbox
+# Obtener URL real del tar.gz con jq (mucho más fiable que grep)
+RUN wget -qO idea_url.json "https://data.services.jetbrains.com/products/releases?code=IIC&latest=true&type=release" && \
+    jq -r '.IIC[0].downloads.linux.link' idea_url.json > idea_url.txt && \
+    wget -i idea_url.txt -O idea.tar.gz && \
+    tar -xzf idea.tar.gz --strip-components=1 && \
+    rm idea.tar.gz idea_url.json idea_url.txt
 
-# Puedes arrancarlo manualmente luego desde terminal o como comando inicial
+EXPOSE 8080
+
+CMD ["bin/idea.sh"]
