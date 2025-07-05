@@ -1,34 +1,41 @@
-FROM debian:bullseye
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV DISPLAY=:1
 
-# Instalar dependencias
+# Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y \
-    xfce4 xfce4-goodies \
-    tightvncserver \
+    openbox \
+    tigervnc-standalone-server \
+    xfce4 \
     wget \
-    jq \
-    libgtk-3-0 libxext6 libxrender1 libxtst6 libxi6 libfreetype6 libx11-xcb1 \
+    curl \
+    libxi6 libxrender1 libxtst6 \
+    libfreetype6 libfontconfig1 \
     ca-certificates \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    libx11-dev \
+    libxext-dev \
+    libxrender-dev \
+    x11-utils \
+    unzip \
+    tar \
+    && apt-get clean
 
 # Crear usuario sin privilegios
 RUN useradd -ms /bin/bash developer
 USER developer
 WORKDIR /home/developer
 
-# Configurar VNC
-RUN mkdir ~/.vnc && \
-    echo '#!/bin/bash\nstartxfce4 &' > ~/.vnc/xstartup && \
-    chmod +x ~/.vnc/xstartup
+# Descargar e instalar IntelliJ IDEA Community
+RUN curl -L -o intellij.tar.gz "https://download.jetbrains.com/idea/ideaIC-latest.tar.gz" && \
+    tar -xzf intellij.tar.gz && \
+    mv idea-IC-* intellij && \
+    rm intellij.tar.gz
 
-# Descargar IntelliJ IDEA Community con JQ
-RUN wget -qO idea_url.json "https://data.services.jetbrains.com/products/releases?code=IIC&latest=true&type=release" && \
-    jq -r '.IIC[0].downloads.linux.link' idea_url.json > idea_url.txt && \
-    wget -i idea_url.txt -O idea.tar.gz && \
-    tar -xzf idea.tar.gz --strip-components=1 && \
-    rm idea.tar.gz idea_url.json idea_url.txt
+# Crear script de inicio
+RUN echo '#!/bin/bash\n\
+vncserver :1 -geometry 1280x800 -depth 24 &&\n\
+/home/developer/intellij/bin/idea.sh\n' > /home/developer/start.sh && \
+    chmod +x /home/developer/start.sh
 
-EXPOSE 5901
-
-CMD ["vncserver", ":1", "-geometry", "1280x800", "-depth", "24"]
+CMD ["/home/developer/start.sh"]
