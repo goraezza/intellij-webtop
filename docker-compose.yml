@@ -1,19 +1,18 @@
-version: '3.8'
+version: "3.8"
 
 services:
   intellij:
-    build: .
-    image: ghcr.io/goraezza/intellij-webtop
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: intellij
-    restart: unless-stopped
     ports:
-      - 3000:3000    # Acceso vía navegador
+      - "5901:5901"
     environment:
-      - PUID=1000
-      - PGID=1000
       - TZ=Europe/Madrid
-      - PASSWORD=mi_clave_segura
     volumes:
-      - ./config:/config
-      - ./proyectos:/home/ubuntu/proyectos
-    shm_size: "2gb"
+      - intellij_data:/home/developer
+    restart: unless-stopped
+
+volumes:
+  intellij_data:
